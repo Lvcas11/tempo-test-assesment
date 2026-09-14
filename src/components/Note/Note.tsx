@@ -55,7 +55,7 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
         height: note.rect.height,
         zIndex: note.z,
       }}
-      className={`group absolute top-0 left-0 touch-none rounded-note shadow-note ${NOTE_COLOR_BG[note.color]}`}
+      className={`group absolute top-0 left-0 touch-none rounded-note shadow-note ring-accent/50 ring-offset-canvas transition-shadow duration-300 ease-note select-none hover:shadow-note-lifted focus-within:shadow-note-lifted focus-within:ring-2 focus-within:ring-offset-2 ${NOTE_COLOR_BG[note.color]}`}
     >
       {/* Content wrapper clips the rounded corners; resize handles live outside it. */}
       <div className="flex h-full w-full flex-col overflow-hidden rounded-note">
