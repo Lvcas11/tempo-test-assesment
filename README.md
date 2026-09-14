@@ -15,15 +15,18 @@ is self-contained and passes the full quality gate (format, lint, type-check, un
 
 ## Overview
 
-A single-page sticky-notes application. Create notes on a canvas, move and resize them by dragging,
-edit their text, draw freehand ink on them, recolor and stack them, and delete them — with a
-per-note × button, a "Clear all" action, or by dragging a note onto a right-edge delete zone. Notes
-persist across reloads through an asynchronous, `localStorage`-backed mock API.
+It is a single-page sticky-notes application where the user can:
+- Create notes on a canvas
+- Move the note dragging it,
+- Draw freehand ink on them.
+- Type on the note.
+- Change the colour of the note
+- Delete the note (dragging into the right side or clicking on the X).
+- Resize the note.
+- Edit their content (text and draw).
+- Persist across reloads through an asynchronous, `localStorage`-backed mock API.
 
-Built for a front-end assessment whose explicit constraint is **"React without stock components /
-avoid ready-made solutions"** — so every interaction (drag, resize, rubber-band create, freehand
-drawing, delete-zone hit-testing) is hand-written with the Pointer Events API. The only runtime
-dependencies are `react` and `react-dom`.
+Developed using Claude Code as an assistant of the entire development process, including the brainstorming plan, the tickets creation and coding.
 
 ## Features
 
@@ -60,60 +63,60 @@ Playwright browsers are needed once for the e2e suite: `npx playwright install`.
 
 ## Usage
 
-- **Create** — drag on the empty canvas to rubber-band a note at that position and size, or click to
-  drop a default-size note. A new note opens focused, ready to type.
-- **Move** — drag a note's accent bar (top). **Resize** — drag any edge or corner (invisible grab
-  zones; the cursor changes on hover).
-- **Edit** — double-click a note; commit with `⌘/Ctrl + Enter`, cancel with `Esc`. The note grows to
-  fit its text, and scrolls once you've manually resized it.
-- **Draw** — toggle the pen in the note's toolbar and draw freehand ink; strokes rescale when the
-  note is resized.
-- **Recolor** — open the color popover from the note's accent bar.
-- **Delete** — click the × button, drag the note onto the **right-edge delete zone**, or use **Clear
-  all** in the navbar (with confirmation).
-- **Keyboard** — focus a note's accent bar, then arrow keys move it, `Alt` + arrows resize it, and
-  `Delete` removes it.
+- **Create a note** — drag anywhere on the empty canvas to draw one at exactly the size and spot you
+  want, or just click to drop a default-size note. Either way it opens ready to type.
+- **Move it** — grab the colored bar at the top and drag. **Resize it** — grab any edge or corner
+  (there are no visible handles; the cursor changes when you're over a spot you can pull).
+- **Edit the text** — double-click the note. `⌘/Ctrl + Enter` saves, `Esc` discards. The note grows
+  as you write, and once you've sized it yourself it just scrolls instead.
+- **Draw on it** — flip on the pen in the note's toolbar and sketch freehand. Your strokes scale
+  along with the note when you resize it.
+- **Change the color** — click the color dot on the note's bar to open the palette.
+- **Delete it** — hit the × on the note, drag it over to the **delete zone** on the right edge, or
+  wipe everything with **Clear all** in the top bar (it asks first).
+- **Keyboard** — focus a note's bar and use the arrow keys to move it, `Alt` + arrows to resize, and
+  `Delete` to remove it.
 
 ## Browser support
 
-Desktop, minimum resolution 1024×768. Latest Chrome, Firefox, and Edge. The e2e suite runs on
-Chromium (covering Chrome and Edge) and Firefox.
+Built for desktop, down to 1024×768. Works on the latest Chrome, Firefox, and Edge — and the e2e
+suite runs on both Chromium (which stands in for Chrome and Edge) and Firefox, so that support isn't
+just a claim.
 
 ## Architecture
 
-The source is organized as a **flat, single-domain** tree under `src/`: `components/` (each in its
-own folder with a colocated test and a barrel), `hooks/`, `state/`, `api/`, `lib/`, plus `types.ts`
-and `constants.ts`.
+Everything lives in a **flat `src/`** — no deep `features/` nesting, since this is a single-domain
+app. You'll find `components/` (each component in its own folder with a colocated test and a barrel),
+`hooks/`, `state/`, `api/`, `lib/`, and two small files, `types.ts` and `constants.ts`.
 
-**State** lives in a `useReducer` store with a normalized shape (a `byId` map plus an `order` array)
-and is exposed through two **separate contexts** — one for state, one for `dispatch`. Splitting them
-means components that only dispatch never re-render when notes change, and each `Note` subscribes to
-only its own slice, so moving one note never re-renders its siblings. Actions form a discriminated
-union and the reducer is checked exhaustively with a `never` assertion, so adding an action without
-handling it fails to compile.
+**State.** A `useReducer` store holds the notes in a normalized shape (a `byId` map plus an `order`
+array), and I hand it out through two _separate_ contexts — one for the state, one for `dispatch`.
+That split matters: a component that only needs to dispatch never re-renders when the notes change,
+and each `Note` reads only its own slice, so dragging one note doesn't re-render the others. The
+actions are a discriminated union and the reducer handles them exhaustively (with a `never` check),
+so if I ever add an action and forget to handle it, the build fails instead of the app.
 
-**Interactions** are all built on one hand-written primitive, `usePointerDrag` — a generic gesture
-engine that captures the pointer (so a drag survives the cursor leaving the element), reports
-`requestAnimationFrame`-throttled cumulative deltas, and gates a gesture with an optional `canStart`
-predicate. Move, resize, rubber-band create, and freehand drawing are all thin callers of it. The
-**performance strategy** is deliberate: during an active gesture the note element's `transform` and
-size are written **directly to the DOM via a ref**, bypassing React entirely; the reducer is touched
-only once, on `pointerup`, to commit the final geometry. This keeps dragging at 60 fps regardless of
-how many notes are on the canvas. The delete zone reuses the same move gesture, hit-testing the
-note's live rect against the zone's rect each frame.
+**Interactions.** Every gesture — move, resize, rubber-band create, freehand drawing — is built on a
+single hand-written hook, `usePointerDrag`. It captures the pointer (so a drag keeps working even if
+the cursor leaves the element), reports `requestAnimationFrame`-throttled deltas, and can veto a
+gesture up front via a `canStart` check. The performance trick is deliberate: while you're dragging,
+the note's `transform` and size are written **straight to the DOM through a ref**, skipping React
+entirely — the reducer only hears about it once, on release. That's what keeps dragging smooth at 60
+fps no matter how many notes are on screen. The delete zone piggybacks on the same move gesture,
+checking each frame whether the note overlaps it.
 
-**Persistence** is a side-effect layer, kept out of the reducer to keep it pure. A `mockClient`
-exposes async `fetchNotes` / `saveNote` / `deleteNote` / `replaceAll` methods with simulated latency
-and a `localStorage` backing store; `useNotesPersistence` hydrates the store on mount and persists
-changes granularly (per-note save/delete, debounced). Errors funnel through a single `reportError`
-sink, ready to wire to a monitoring service.
+**Persistence.** I kept this as a side-effect layer so the reducer stays pure. A `mockClient` fakes a
+REST API — `fetchNotes` / `saveNote` / `deleteNote` / `replaceAll`, all async with a bit of simulated
+latency, backed by `localStorage`. `useNotesPersistence` loads notes on startup and then saves
+changes as they happen, per-note and debounced rather than rewriting everything. Anything that throws
+goes through a single `reportError` sink that's ready to point at a real monitoring service.
 
-**Typing** is strict throughout: a **branded `NoteId`** prevents mixing raw strings with
-identifiers, the resize handles are derived from a single tuple of edge/corner literals rather than a
-hand-maintained union, and the geometry helpers (clamp, resize-from-handle, rect intersection, stroke
-scaling) are pure and unit-tested. Correctness is covered by a full test pyramid — Vitest for the
-reducer, geometry, hooks, and components; Playwright end-to-end specs (one per feature plus a full
-journey), run across Chromium and Firefox.
+**Types & tests.** Typing is strict everywhere. A **branded `NoteId`** stops me from accidentally
+passing a plain string where an id belongs, the resize handles come from one source-of-truth tuple
+instead of a union I'd have to keep in sync, and the geometry helpers (clamp, resize-from-handle,
+intersection, stroke scaling) are pure and unit-tested. Coverage is a real pyramid: Vitest for the
+reducer, geometry, hooks and components, and Playwright end-to-end specs — one per feature plus a
+full end-to-end journey — running on both Chromium and Firefox.
 
 ### Layout
 
