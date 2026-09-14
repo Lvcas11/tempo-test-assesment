@@ -1,0 +1,92 @@
+@import 'tailwindcss';
+
+/**
+ * Design tokens (Tailwind v4 CSS-first `@theme`).
+ * A Microsoft Sticky Notes-inspired system: vivid note colors, each with a
+ * darker header "accent bar", crisp edges, and a soft elevation ramp.
+ */
+@theme {
+  /* Surface & ink */
+  --color-canvas: oklch(0.97 0.003 250);
+  --color-surface: oklch(1 0 0);
+  --color-ink: oklch(0.22 0.015 260);
+  --color-ink-muted: oklch(0.5 0.015 260);
+  --color-hairline: oklch(0.88 0.006 260);
+  --color-accent: oklch(0.58 0.16 265);
+  --color-danger: oklch(0.6 0.2 25);
+
+  /* Note body colors — vivid, MS Sticky Notes-style. */
+  --color-note-yellow: oklch(0.9 0.14 95);
+  --color-note-green: oklch(0.88 0.13 150);
+  --color-note-pink: oklch(0.86 0.09 5);
+  --color-note-purple: oklch(0.83 0.1 300);
+  --color-note-blue: oklch(0.86 0.09 235);
+  --color-note-gray: oklch(0.9 0.006 260);
+
+  /* Note header accent bars — a shade deeper than each body. */
+  --color-note-yellow-bar: oklch(0.83 0.16 92);
+  --color-note-green-bar: oklch(0.8 0.15 150);
+  --color-note-pink-bar: oklch(0.78 0.12 5);
+  --color-note-purple-bar: oklch(0.74 0.13 300);
+  --color-note-blue-bar: oklch(0.78 0.12 235);
+  --color-note-gray-bar: oklch(0.82 0.008 260);
+
+  /* Elevation ramp — soft, layered shadows. */
+  --shadow-note: 0 1px 2px oklch(0.2 0.02 260 / 0.1), 0 4px 12px oklch(0.2 0.02 260 / 0.08);
+  --shadow-note-lifted:
+    0 10px 20px oklch(0.2 0.02 260 / 0.16), 0 20px 48px oklch(0.2 0.02 260 / 0.12);
+
+  /* Radii — MS notes are barely rounded. */
+  --radius-note: 0.25rem;
+
+  /* Motion — becomes the `ease-note` utility in Tailwind v4. */
+  --ease-note: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+/**
+ * The app is designed as a light "paper" surface. Declaring the color scheme
+ * opts out of browser/OS forced-dark inversion (e.g. Chrome's Auto Dark Mode),
+ * so the intended palette renders identically regardless of the user's theme.
+ */
+html {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif,
+    'Apple Color Emoji', 'Segoe UI Emoji';
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/**
+ * Note scroll area — a subtle, always-consistent scrollbar so overflowing text
+ * clearly reads as scrollable (overlay scrollbars would otherwise hide it).
+ */
+.note-scroll {
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+  scrollbar-color: color-mix(in oklch, var(--color-ink) 28%, transparent) transparent;
+}
+.note-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.note-scroll::-webkit-scrollbar-thumb {
+  background-color: color-mix(in oklch, var(--color-ink) 22%, transparent);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+.note-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklch, var(--color-ink) 34%, transparent);
+}
