@@ -10,9 +10,6 @@ import { ColorPicker } from '@/components/ColorPicker'
 import { ResizeHandles } from '@/components/ResizeHandles'
 import { DrawingLayer } from '@/components/DrawingLayer'
 
-/** Ink color used by the pen — a deep, legible tone. */
-const INK = 'var(--color-ink)'
-
 interface NoteProps {
   id: NoteId
   canvasRef: RefObject<HTMLElement | null>
@@ -23,12 +20,9 @@ interface NoteProps {
 const HEADER_HEIGHT = 38
 /** Total vertical text padding (py-3 top + bottom = 24px). */
 const TEXT_PADDING_Y = 24
+/** Ink color used by the pen, per note color — a deep, legible tone. */
+const INK = 'var(--color-ink)'
 
-/**
- * A single sticky note. Reads only its own slice from state, so it re-renders
- * only when that note changes. During move the element is mutated directly by
- * `useNoteGestures`; React commits the final geometry on release.
- */
 function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
   const note = useNote(id)
   const dispatch = useNotesDispatch()
@@ -47,6 +41,11 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
   const commitText = (text: string) => {
     setIsEditing(false)
     if (text !== note.text) dispatch({ type: 'EDIT_TEXT', id, text })
+  }
+
+  const startEditing = () => {
+    if (isDrawing) return
+    setIsEditing(true)
   }
 
   return (
@@ -140,6 +139,7 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
           </div>
         </div>
 
+        {/* Body: text + ink overlay. */}
         <div className="relative min-h-0 flex-1">
           {isEditing ? (
             <textarea
@@ -162,7 +162,7 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
           ) : (
             <div
               data-testid="note-text"
-              onDoubleClick={() => setIsEditing(true)}
+              onDoubleClick={startEditing}
               className="note-scroll h-full w-full overflow-x-hidden overflow-y-auto px-4 py-3 text-[15px] leading-relaxed break-words whitespace-pre-wrap text-ink"
             >
               {note.text ||
