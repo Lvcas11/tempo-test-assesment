@@ -1,11 +1,18 @@
 import { render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 
 describe('App shell', () => {
-  it('renders the header and canvas', () => {
+  beforeEach(() => localStorage.clear())
+
+  it('renders the header immediately', () => {
     render(<App />)
     expect(screen.getByRole('heading', { name: /sticky notes/i })).toBeInTheDocument()
-    expect(screen.getByTestId('canvas')).toBeInTheDocument()
+  })
+
+  it('renders the canvas once notes have loaded', async () => {
+    render(<App />)
+    // The workspace hydrates asynchronously; the canvas appears after loading.
+    expect(await screen.findByTestId('canvas')).toBeInTheDocument()
   })
 })

@@ -13,6 +13,15 @@ export const CREATE_DRAG_THRESHOLD = 8
 /** Default color assigned to click-created notes. */
 export const DEFAULT_NOTE_COLOR = 'yellow' as const
 
+/** localStorage key for persisted notes (versioned to allow future migrations). */
+export const STORAGE_KEY = 'sticky-notes/v1'
+
+/** Simulated network latency (ms) for the async mock client. */
+export const DEFAULT_LATENCY = 120
+
+/** Debounce (ms) before persisting note changes. */
+export const PERSIST_DEBOUNCE = 250
+
 /** Body background token class per color. */
 export const NOTE_COLOR_BG: Record<NoteColor, string> = {
   yellow: 'bg-note-yellow',
