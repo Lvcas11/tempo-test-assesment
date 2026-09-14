@@ -1,7 +1,8 @@
-import { useRef, type RefObject } from 'react'
-import { clampRectToBounds, resizeRect } from '@/lib/geometry'
+import { useCallback, useRef, type RefObject } from 'react'
+import { clampRectToBounds, rectsIntersect, resizeRect } from '@/lib/geometry'
 import { useNotesDispatch } from '@/state/useNotes'
 import { MIN_NOTE_SIZE } from '@/constants'
+import { useDeleteZone } from '@/components/DeleteZone/DeleteZoneContext'
 import type { Handle, Note, Rect } from '@/types'
 import { usePointerDrag } from './usePointerDrag'
 
@@ -23,20 +24,48 @@ function paint(el: HTMLDivElement, rect: Rect): void {
 /**
  * Wires move (drag on the accent bar) and resize (drag on a handle) for one note.
  * During a gesture the note element is updated directly; state is committed only
- * on release. Delete-zone hit-testing is added in a later ticket.
+ * on release.
  */
 export function useNoteGestures({ note, elementRef, canvasRef }: UseNoteGesturesArgs) {
   const dispatch = useNotesDispatch()
+  const deleteZone = useDeleteZone()
   const liveRect = useRef<Rect>(note.rect)
 
+  /** True when the note's live (canvas-local) rect overlaps the delete strip. */
+  const isOverDeleteZone = useCallback(
+    (rect: Rect): boolean => {
+      const canvas = canvasRef.current
+      const zoneEl = deleteZone?.ref.current
+      if (!canvas || !zoneEl) return false
+      const canvasBox = canvas.getBoundingClientRect()
+      const zoneBox = zoneEl.getBoundingClientRect()
+      // Convert the note rect to client coords to compare with the zone box.
+      const noteClient: Rect = {
+        x: rect.x + canvasBox.left,
+        y: rect.y + canvasBox.top,
+        width: rect.width,
+        height: rect.height,
+      }
+      return rectsIntersect(noteClient, {
+        x: zoneBox.left,
+        y: zoneBox.top,
+        width: zoneBox.width,
+        height: zoneBox.height,
+      })
+    },
+    [canvasRef, deleteZone],
+  )
+
   const move = usePointerDrag<Rect>({
-    // A press on a resize handle, a button, or the text editor must not start a move.
+    // A press on a resize handle, the color picker, the delete button, or the
+    // text editor must not start a move.
     canStart: (event) => {
       const target = event.target as HTMLElement
       return !target.closest('[data-handle], button, textarea')
     },
     onStart: () => {
       dispatch({ type: 'BRING_TO_FRONT', id: note.id })
+      deleteZone?.setDragging(true)
       return note.rect
     },
     onMove: ({ dx, dy }, origin) => {
@@ -49,9 +78,16 @@ export function useNoteGestures({ note, elementRef, canvasRef }: UseNoteGestures
       )
       liveRect.current = next
       paint(el, next)
+      deleteZone?.setArmed(isOverDeleteZone(next))
     },
     onEnd: () => {
+      deleteZone?.setDragging(false)
+      deleteZone?.setArmed(false)
       const rect = liveRect.current
+      if (isOverDeleteZone(rect)) {
+        dispatch({ type: 'REMOVE_NOTE', id: note.id })
+        return
+      }
       dispatch({ type: 'MOVE_NOTE', id: note.id, x: rect.x, y: rect.y })
     },
   })
