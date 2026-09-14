@@ -3,6 +3,7 @@ import { useNote, useNotesDispatch } from '@/state/useNotes'
 import { useNoteGestures } from '@/hooks/useNoteGestures'
 import { NOTE_COLOR_BAR, NOTE_COLOR_BG } from '@/constants'
 import type { NoteId } from '@/types'
+import { ResizeHandles } from '@/components/ResizeHandles'
 
 interface NoteProps {
   id: NoteId
@@ -25,7 +26,7 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
   // A freshly created note starts in edit mode so the user can type immediately.
   const [isEditing, setIsEditing] = useState(autoFocus)
 
-  const { move } = useNoteGestures({ note, elementRef, canvasRef })
+  const { move, resize } = useNoteGestures({ note, elementRef, canvasRef })
 
   const commitText = (text: string) => {
     setIsEditing(false)
@@ -45,45 +46,55 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
         height: note.rect.height,
         zIndex: note.z,
       }}
-      className={`group absolute top-0 left-0 flex touch-none flex-col overflow-hidden rounded-note shadow-note ${NOTE_COLOR_BG[note.color]}`}
+      className={`group absolute top-0 left-0 touch-none rounded-note shadow-note ${NOTE_COLOR_BG[note.color]}`}
     >
-      {/* Accent bar — the drag affordance. */}
-      <div
-        {...move}
-        data-testid="note-drag-handle"
-        style={{ height: HEADER_HEIGHT }}
-        className={`flex flex-none cursor-grab items-center justify-between px-2 active:cursor-grabbing ${NOTE_COLOR_BAR[note.color]}`}
-      />
+      {/* Content wrapper clips the rounded corners; resize handles live outside it. */}
+      <div className="flex h-full w-full flex-col overflow-hidden rounded-note">
+        {/* Accent bar — the drag affordance. */}
+        <div
+          {...move}
+          data-testid="note-drag-handle"
+          style={{ height: HEADER_HEIGHT }}
+          className={`flex flex-none cursor-grab items-center justify-between px-2 active:cursor-grabbing ${NOTE_COLOR_BAR[note.color]}`}
+        />
 
-      <div className="relative min-h-0 flex-1">
-        {isEditing ? (
-          <textarea
-            autoFocus
-            defaultValue={note.text}
-            data-testid="note-textarea"
-            onPointerDown={(e) => e.stopPropagation()}
-            onBlur={(e) => commitText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') {
-                e.preventDefault()
-                setIsEditing(false)
-              } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault()
-                commitText((e.target as HTMLTextAreaElement).value)
-              }
-            }}
-            className="h-full w-full resize-none bg-transparent px-4 py-3 text-[15px] leading-relaxed text-ink outline-none"
-          />
-        ) : (
-          <div
-            data-testid="note-text"
-            onDoubleClick={() => setIsEditing(true)}
-            className="h-full w-full overflow-auto px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap text-ink"
-          >
-            {note.text || <span className="text-ink/45">Double-click to edit</span>}
-          </div>
-        )}
+        <div className="relative min-h-0 flex-1">
+          {isEditing ? (
+            <textarea
+              autoFocus
+              defaultValue={note.text}
+              data-testid="note-textarea"
+              onPointerDown={(e) => e.stopPropagation()}
+              onBlur={(e) => commitText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape') {
+                  e.preventDefault()
+                  setIsEditing(false)
+                } else if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                  e.preventDefault()
+                  commitText((e.target as HTMLTextAreaElement).value)
+                }
+              }}
+              className="h-full w-full resize-none bg-transparent px-4 py-3 text-[15px] leading-relaxed text-ink outline-none"
+            />
+          ) : (
+            <div
+              data-testid="note-text"
+              onDoubleClick={() => setIsEditing(true)}
+              className="h-full w-full overflow-auto px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap text-ink"
+            >
+              {note.text || <span className="text-ink/45">Double-click to edit</span>}
+            </div>
+          )}
+        </div>
       </div>
+
+      <ResizeHandles
+        onHandlePointerDown={resize.onPointerDown}
+        onHandlePointerMove={resize.onPointerMove}
+        onHandlePointerUp={resize.onPointerUp}
+        onHandlePointerCancel={resize.onPointerCancel}
+      />
     </div>
   )
 }
