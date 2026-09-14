@@ -1,10 +1,15 @@
 import { memo, useRef, useState, type RefObject } from 'react'
 import { useNote, useNotesDispatch } from '@/state/useNotes'
 import { useNoteGestures } from '@/hooks/useNoteGestures'
+import { useDrawing } from '@/hooks/useDrawing'
 import { NOTE_COLOR_BAR, NOTE_COLOR_BG } from '@/constants'
 import type { NoteId } from '@/types'
 import { ColorPicker } from '@/components/ColorPicker'
 import { ResizeHandles } from '@/components/ResizeHandles'
+import { DrawingLayer } from '@/components/DrawingLayer'
+
+/** Ink color used by the pen — a deep, legible tone. */
+const INK = 'var(--color-ink)'
 
 interface NoteProps {
   id: NoteId
@@ -26,9 +31,11 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
   const elementRef = useRef<HTMLDivElement>(null)
   // A freshly created note starts in edit mode so the user can type immediately.
   const [isEditing, setIsEditing] = useState(autoFocus)
+  const [isDrawing, setIsDrawing] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
 
   const { move, resize } = useNoteGestures({ note, elementRef, canvasRef })
+  const { liveStroke, handlers: drawHandlers } = useDrawing(id, INK)
 
   const commitText = (text: string) => {
     setIsEditing(false)
@@ -80,6 +87,29 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
           <div className="flex items-center gap-1 opacity-0 transition-opacity duration-150 ease-note group-hover:opacity-100 focus-within:opacity-100">
             <button
               type="button"
+              aria-label={isDrawing ? 'Switch to write mode' : 'Switch to draw mode'}
+              aria-pressed={isDrawing}
+              title={isDrawing ? 'Draw mode — click for write mode' : 'Draw mode'}
+              data-testid="note-pen"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => setIsDrawing((v) => !v)}
+              className={`grid h-8 w-8 place-items-center rounded-md transition-colors ease-note focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none ${
+                isDrawing
+                  ? 'bg-accent text-white shadow-sm'
+                  : 'text-ink/70 hover:bg-black/10 hover:text-ink'
+              }`}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M4 20l4-1L19 8a2 2 0 0 0-3-3L5 16l-1 4z"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
               aria-label="Delete note"
               data-testid="note-delete"
               onPointerDown={(e) => e.stopPropagation()}
@@ -123,9 +153,18 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
               onDoubleClick={() => setIsEditing(true)}
               className="h-full w-full overflow-auto px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap text-ink"
             >
-              {note.text || <span className="text-ink/45">Double-click to edit</span>}
+              {note.text ||
+                // Hide the hint while drawing so it doesn't sit behind the ink.
+                (!isDrawing && <span className="text-ink/45">Double-click to edit</span>)}
             </div>
           )}
+
+          <DrawingLayer
+            strokes={note.strokes}
+            liveStroke={liveStroke}
+            active={isDrawing}
+            handlers={drawHandlers}
+          />
         </div>
       </div>
 
