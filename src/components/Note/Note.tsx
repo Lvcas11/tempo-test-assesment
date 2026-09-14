@@ -55,8 +55,28 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
           {...move}
           data-testid="note-drag-handle"
           style={{ height: HEADER_HEIGHT }}
-          className={`flex flex-none cursor-grab items-center justify-between px-2 active:cursor-grabbing ${NOTE_COLOR_BAR[note.color]}`}
-        />
+          className={`flex flex-none cursor-grab items-center justify-end px-2 active:cursor-grabbing ${NOTE_COLOR_BAR[note.color]}`}
+        >
+          <div className="flex items-center gap-1 opacity-0 transition-opacity duration-150 ease-note group-hover:opacity-100 focus-within:opacity-100">
+            <button
+              type="button"
+              aria-label="Delete note"
+              data-testid="note-delete"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => dispatch({ type: 'REMOVE_NOTE', id })}
+              className="grid h-8 w-8 place-items-center rounded-md text-ink/70 transition-colors ease-note hover:bg-danger/15 hover:text-danger focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path
+                  d="M6 6l12 12M18 6L6 18"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
 
         <div className="relative min-h-0 flex-1">
           {isEditing ? (
