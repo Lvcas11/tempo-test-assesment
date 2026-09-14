@@ -2,6 +2,7 @@ import { memo, useRef, useState, type RefObject } from 'react'
 import { useNote, useNotesDispatch } from '@/state/useNotes'
 import { useNoteGestures } from '@/hooks/useNoteGestures'
 import { useDrawing } from '@/hooks/useDrawing'
+import { useAutoGrow } from '@/hooks/useAutoGrow'
 import { NOTE_COLOR_BAR, NOTE_COLOR_BG } from '@/constants'
 import type { NoteId } from '@/types'
 import { ColorPicker } from '@/components/ColorPicker'
@@ -19,6 +20,8 @@ interface NoteProps {
 }
 
 const HEADER_HEIGHT = 38
+/** Total vertical text padding (py-3 top + bottom = 24px). */
+const TEXT_PADDING_Y = 24
 
 /**
  * A single sticky note. Reads only its own slice from state, so it re-renders
@@ -29,6 +32,7 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
   const note = useNote(id)
   const dispatch = useNotesDispatch()
   const elementRef = useRef<HTMLDivElement>(null)
+  const measureRef = useRef<HTMLDivElement>(null)
   // A freshly created note starts in edit mode so the user can type immediately.
   const [isEditing, setIsEditing] = useState(autoFocus)
   const [isDrawing, setIsDrawing] = useState(false)
@@ -36,6 +40,7 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
 
   const { move, resize } = useNoteGestures({ note, elementRef, canvasRef })
   const { liveStroke, handlers: drawHandlers } = useDrawing(id, INK)
+  useAutoGrow(note, measureRef, HEADER_HEIGHT, TEXT_PADDING_Y)
 
   const commitText = (text: string) => {
     setIsEditing(false)
@@ -145,19 +150,28 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
                   commitText((e.target as HTMLTextAreaElement).value)
                 }
               }}
-              className="h-full w-full resize-none bg-transparent px-4 py-3 text-[15px] leading-relaxed text-ink outline-none"
+              className="note-scroll h-full w-full resize-none bg-transparent px-4 py-3 text-[15px] leading-relaxed text-ink outline-none"
             />
           ) : (
             <div
               data-testid="note-text"
               onDoubleClick={() => setIsEditing(true)}
-              className="h-full w-full overflow-auto px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap text-ink"
+              className="note-scroll h-full w-full overflow-x-hidden overflow-y-auto px-4 py-3 text-[15px] leading-relaxed break-words whitespace-pre-wrap text-ink"
             >
               {note.text ||
                 // Hide the hint while drawing so it doesn't sit behind the ink.
                 (!isDrawing && <span className="text-ink/45">Double-click to edit</span>)}
             </div>
           )}
+
+          {/* Hidden mirror: intrinsic height of the text drives auto-grow. */}
+          <div
+            ref={measureRef}
+            aria-hidden="true"
+            className="pointer-events-none invisible absolute top-0 left-0 w-full px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap"
+          >
+            {note.text ? note.text + '\n' : ' '}
+          </div>
 
           <DrawingLayer
             strokes={note.strokes}
