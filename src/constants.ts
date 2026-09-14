@@ -1,4 +1,5 @@
 import type { NoteColor } from './types'
+import { NOTE_COLORS } from './types'
 
 /** Minimum note edge length, in px. */
 export const MIN_NOTE_SIZE = 120
@@ -31,3 +32,15 @@ export const NOTE_COLOR_BAR: Record<NoteColor, string> = {
   blue: 'bg-note-blue-bar',
   gray: 'bg-note-gray-bar',
 }
+
+/** Human-readable labels for the color picker's accessible names. */
+export const NOTE_COLOR_LABEL: Record<NoteColor, string> = {
+  yellow: 'Yellow',
+  green: 'Green',
+  pink: 'Pink',
+  purple: 'Purple',
+  blue: 'Blue',
+  gray: 'Gray',
+}
+
+export { NOTE_COLORS }

@@ -3,6 +3,7 @@ import { useNote, useNotesDispatch } from '@/state/useNotes'
 import { useNoteGestures } from '@/hooks/useNoteGestures'
 import { NOTE_COLOR_BAR, NOTE_COLOR_BG } from '@/constants'
 import type { NoteId } from '@/types'
+import { ColorPicker } from '@/components/ColorPicker'
 import { ResizeHandles } from '@/components/ResizeHandles'
 
 interface NoteProps {
@@ -25,6 +26,7 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
   const elementRef = useRef<HTMLDivElement>(null)
   // A freshly created note starts in edit mode so the user can type immediately.
   const [isEditing, setIsEditing] = useState(autoFocus)
+  const [pickerOpen, setPickerOpen] = useState(false)
 
   const { move, resize } = useNoteGestures({ note, elementRef, canvasRef })
 
@@ -55,8 +57,26 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
           {...move}
           data-testid="note-drag-handle"
           style={{ height: HEADER_HEIGHT }}
-          className={`flex flex-none cursor-grab items-center justify-end px-2 active:cursor-grabbing ${NOTE_COLOR_BAR[note.color]}`}
+          className={`flex flex-none cursor-grab items-center justify-between px-2 active:cursor-grabbing ${NOTE_COLOR_BAR[note.color]}`}
         >
+          <div className="flex items-center">
+            <button
+              type="button"
+              aria-label="Change color"
+              aria-haspopup="true"
+              aria-expanded={pickerOpen}
+              data-testid="note-color-toggle"
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => setPickerOpen((v) => !v)}
+              className="grid h-8 w-8 place-items-center rounded-md text-ink/70 opacity-0 transition-[opacity,background-color] duration-150 ease-note group-hover:opacity-100 hover:bg-black/10 hover:text-ink focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.6" />
+                <circle cx="12" cy="12" r="3" fill="currentColor" />
+              </svg>
+            </button>
+          </div>
+
           <div className="flex items-center gap-1 opacity-0 transition-opacity duration-150 ease-note group-hover:opacity-100 focus-within:opacity-100">
             <button
               type="button"
@@ -108,6 +128,23 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
           )}
         </div>
       </div>
+
+      {/* Color popover — sits outside the clipped content so all swatches show. */}
+      {pickerOpen && (
+        <div
+          style={{ top: HEADER_HEIGHT + 4 }}
+          className="absolute left-2 z-30 w-max rounded-xl border border-hairline bg-surface p-2 shadow-note-lifted"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
+          <ColorPicker
+            value={note.color}
+            onChange={(color) => {
+              dispatch({ type: 'SET_COLOR', id, color })
+              setPickerOpen(false)
+            }}
+          />
+        </div>
+      )}
 
       <ResizeHandles
         onHandlePointerDown={resize.onPointerDown}
