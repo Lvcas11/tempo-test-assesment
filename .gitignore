@@ -32,7 +32,6 @@ ROADMAP.local.md
 *.njsproj
 *.sln
 *.sw?
-.github/workflows/ci.yml
 
 # TypeScript incremental build info
 *.tsbuildinfo
