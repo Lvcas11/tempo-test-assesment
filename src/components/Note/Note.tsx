@@ -1,6 +1,7 @@
 import { memo, useRef, useState, type RefObject } from 'react'
 import { useNote, useNotesDispatch } from '@/state/useNotes'
 import { useNoteGestures } from '@/hooks/useNoteGestures'
+import { useNoteKeyboard } from '@/hooks/useNoteKeyboard'
 import { useDrawing } from '@/hooks/useDrawing'
 import { useAutoGrow } from '@/hooks/useAutoGrow'
 import { NOTE_COLOR_BAR, NOTE_COLOR_BG } from '@/constants'
@@ -39,6 +40,7 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
   const [pickerOpen, setPickerOpen] = useState(false)
 
   const { move, resize } = useNoteGestures({ note, elementRef, canvasRef })
+  const onHandleKeyDown = useNoteKeyboard(note, canvasRef)
   const { liveStroke, handlers: drawHandlers } = useDrawing(id, INK)
   useAutoGrow(note, measureRef, HEADER_HEIGHT, TEXT_PADDING_Y)
 
@@ -64,12 +66,17 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
     >
       {/* Content wrapper clips the rounded corners; resize handles live outside it. */}
       <div className="flex h-full w-full flex-col overflow-hidden rounded-note">
-        {/* Accent bar — the drag affordance. */}
+        {/* Accent bar — the drag affordance, and the keyboard entry point:
+            focus it and use arrow keys to move, Alt+arrows to resize. */}
         <div
           {...move}
           data-testid="note-drag-handle"
+          role="button"
+          tabIndex={0}
+          aria-label="Move note. Use arrow keys to move, Alt with arrow keys to resize, Delete to remove."
+          onKeyDown={onHandleKeyDown}
           style={{ height: HEADER_HEIGHT }}
-          className={`flex flex-none cursor-grab items-center justify-between px-2 active:cursor-grabbing ${NOTE_COLOR_BAR[note.color]}`}
+          className={`flex flex-none cursor-grab items-center justify-between px-2 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none active:cursor-grabbing ${NOTE_COLOR_BAR[note.color]}`}
         >
           <div className="flex items-center">
             <button
