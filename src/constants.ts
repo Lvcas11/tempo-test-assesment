@@ -21,3 +21,13 @@ export const NOTE_COLOR_BG: Record<NoteColor, string> = {
   blue: 'bg-note-blue',
   gray: 'bg-note-gray',
 }
+
+/** Darker header "accent bar" token class per color. */
+export const NOTE_COLOR_BAR: Record<NoteColor, string> = {
+  yellow: 'bg-note-yellow-bar',
+  green: 'bg-note-green-bar',
+  pink: 'bg-note-pink-bar',
+  purple: 'bg-note-purple-bar',
+  blue: 'bg-note-blue-bar',
+  gray: 'bg-note-gray-bar',
+}

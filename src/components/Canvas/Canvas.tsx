@@ -33,7 +33,7 @@ export function Canvas() {
       )}
 
       {order.map((id) => (
-        <Note key={id} id={id} autoFocus={id === lastCreatedId} />
+        <Note key={id} id={id} canvasRef={canvasRef} autoFocus={id === lastCreatedId} />
       ))}
 
       {preview && <RubberBand rect={preview} />}
