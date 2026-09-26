@@ -36,7 +36,7 @@ function NoteComponent({ id, canvasRef, autoFocus = false }: NoteProps) {
   const { move, resize } = useNoteGestures({ note, elementRef, canvasRef })
   const onHandleKeyDown = useNoteKeyboard(note, canvasRef)
   const { liveStroke, handlers: drawHandlers } = useDrawing(id, INK)
-  useAutoGrow(note, measureRef, HEADER_HEIGHT, TEXT_PADDING_Y)
+  useAutoGrow(note, measureRef, canvasRef, HEADER_HEIGHT, TEXT_PADDING_Y)
 
   const commitText = (text: string) => {
     setIsEditing(false)
